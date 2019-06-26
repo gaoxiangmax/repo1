@@ -1,0 +1,133 @@
+<%
+    from iCloud.core.utils import language_get,caption_get
+%>
+<div class="header">${language_get(u'基础资料导入')}</div>
+<!-- 界面主体 默认为height:500px -->
+<div class="customWindow" style="height: 140px;overflow: visible;padding: 10px;">
+    <div class="content" style="position: relative;">
+        <!-- 默认为height:480px -->
+        <div class="area" id="areaImport">
+
+        </div>
+        <input id="fieldupload" style="display:none" type="file">
+    </div>
+</div>
+
+<div class="actions" style="height: 50px;padding: 5px 10px!important;line-height: 42px;">
+    <!-- 取消按钮 -->
+    <div class="ui black deny button cancel">
+        ${language_get('cancel')}
+    </div>
+    <!-- 确认按钮 -->
+    <div class="ui positive right labeled icon button keep" id="btnOK">
+        ${language_get('confirm')}
+    </div>
+</div>
+
+<script type="text/javascript">
+    require(['cxcore', 'cxsemanticui', 'cxEdit', 'iJqGrid'], function (cxcore, cxsemanticui) {
+        var fileObj;
+        var sCaption1 = _.language.get("请选择导入的Excel：");
+        var sCaption2 = _.language.get("是否检查主表重复：");
+        var sCaption3 = _.language.get("是否检查子表重复：");
+        var oConfig = [{
+            name: "Excel路径",
+            col: 2,
+            datatype: "dtBoolean",
+            editor: "ButtonEdit",
+            fieldname: "IsEXW",
+            row: 1,
+            text: sCaption1,
+            visible: "True"
+        }, {
+            name: "是否检查主表重复",
+            col: 2,
+            datatype: "dtBoolean",
+            editor: "CheckBox",
+            fieldname: "IsRepeat",
+            row: 1,
+            text: sCaption2,
+            visible: "True",
+            defaultdata: "True"
+        }, {
+            name: "是否检查子表重复",
+            col: 2,
+            datatype: "dtBoolean",
+            editor: "CheckBox",
+            fieldname: "IsRepeat",
+            row: 1,
+            text: sCaption3,
+            visible: "True"
+        }];
+
+        $("#areaImport").initfuncedit({
+            col: 2, //总列数
+            edAttr: oConfig,
+            onchange: function () {
+                // change时
+            },
+            onellipsis: function () {
+                //填充按钮点击时
+                $("#fieldupload").click();
+            },
+            oninit: function () {
+                //初始化界面时
+                $("#fieldupload").val("");
+                $("#fieldupload").unbind().bind("change", function () {
+                    fileObj = document.getElementById("fieldupload").files[0]; // js 获取文件对象
+                    if (typeof (fileObj) == "undefined" || fileObj.size <= 0) {
+                        _.ui.showError(_.language.get("请选择Excel文件"));
+                        return;
+                    }
+                    $("#areaImport").editbyname("Excel路径").setValue(fileObj.name);
+
+                });
+                $("#areaImport").editbyname("是否检查主表重复").setValue(true);
+                $("#areaImport").editbyname("是否检查子表重复").setValue(true);
+            }
+        });
+
+        $("#btnOK").click(function (event) {
+            var sFileName = $("#areaImport").editbyname("Excel路径").getValue();
+            var reg = /(?:xlsx)$/; //正则表达式判断只能导入xlsx格式的excel
+            if (sFileName.length == 0) {
+                _.ui.showError(_.language.get("请选择文件路径！"));
+                event.stopPropagation(); //阻止关闭界面
+                return;
+            } else if (!reg.test(sFileName)) {
+                _.ui.showError(_.language.get("请选择'.xlsx'格式的文件！"));
+                event.stopPropagation();
+                return;
+            }
+
+            if (typeof (fileObj) == "undefined" || fileObj.size <= 0) {
+                _.ui.showError(_.language.get("Excel无效，请重新选择文件！"));
+                return;
+            }
+
+            var formFile = new FormData(); //创建一个FormData空对象
+            formFile.append('file', fileObj); //使用append方法添加key/value，其中的key-file用于在python端获取并解析
+            var bMainRepeat = $("#areaImport").editbyname("是否检查主表重复").getValue();
+            var bDetailRepeat = $("#areaImport").editbyname("是否检查子表重复").getValue();
+            //使用ajax上传文件
+            $.ajax({
+                url: "/intersky/importData/getFile?bMainRepeat=" + bMainRepeat +
+                    '&bDetailRepeat=' + bDetailRepeat,
+                data: formFile,
+                type: "post",
+                cache: false, //上传文件无需缓存
+                processData: false, //用于对data参数进行序列化处理 这里必须false
+                contentType: false, //必须
+                success: function (obj) {
+                    console.log('文件上传成功！');
+                },
+                error: function (err) {
+                    console.log('文件上传失败！');
+                }
+            });
+        });
+
+        //重置编辑尺寸
+        //$("#area1").edResize();
+    })
+</script>

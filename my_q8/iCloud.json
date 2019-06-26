@@ -1,0 +1,12 @@
+{
+    "author": "叶军",
+    "host": "http://127.0.0.1/",
+    "username": "Administrator",
+    "password": "q8intersky",
+    "company": "宁波畅想软件股份有限公司",
+    "id": "intersky.q8",
+    "name": "畅想外贸业务管理系统(Q8)",
+    "description": "2019-05-24",
+    "version": "1.1.0",
+    "dependencies": ""
+}

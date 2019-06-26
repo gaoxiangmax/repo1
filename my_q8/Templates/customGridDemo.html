@@ -1,0 +1,167 @@
+<%
+    from iCloud.core.utils import language_get,caption_get
+%>
+<div class="header">自定义标题</div>
+<!-- 关闭按钮 -->
+<i class="close icon"></i>
+<!-- 界面主体 默认为height:500px -->
+<div class="customWindow">
+    <!-- 默认为height:480px -->
+    <div class="content">
+        <!-- tab条 默认height:30px-->
+        <div class="ui top attached tabular menu">
+            <a class="item active" data-tab="first">模块1</a>
+            <a class="item" data-tab="second">模块2</a>
+        </div>
+        <!-- tab对应的主体div 默认height:450px-->
+        <div class="ui bottom attached tab segment active" data-tab="first">
+            <!-- 标签 默认height:30px-->
+            <div class="label">类别名</div>
+            <!-- 编辑模块 -->
+            <div class="area" id="area1">
+
+            </div>
+            <div class="divider"></div>
+            <!-- 标签 默认height:30px-->
+            <div class="label">表格</div>
+            <!-- 编辑模块 -->
+            <div class="gridHeader">
+                <div class="ui menu gridMenu">
+                    <a class="item noBorder" name="打开" btnaction="open" id="open"><i class="folder open outline icon"></i>打开</a>
+                    <a class="item noBorder" name="新建" btnaction="new" id="new"><i class="plus icon"></i>新建</a>
+                    <a class="item noBorder" name="button_refresh" btnaction="refresh"><i class="refresh icon"></i>刷新</a>
+                    <a class="item noBorder" btnaction="maximize"><i class="desktop icon"></i>全屏</a>
+                </div>
+            </div>
+            <table id="table1" style="width:100%"></table>
+        </div>
+        <div class="ui bottom attached tab segment" data-tab="second">
+            2
+        </div>
+    </div>
+</div>
+<div class="actions">
+    <!-- 取消按钮 -->
+    <div class="ui black deny button cancel">
+        ${language_get('cancel')}
+    </div>
+    <!-- 确认按钮 -->
+    <div class="ui positive right labeled icon button keep">
+        ${language_get('confirm')}
+    </div>
+</div>
+
+
+<script type="text/javascript">
+    require(['cxcore', 'cxsemanticui', 'cxEdit', 'iJqGrid'], function (cxcore, cxsemanticui) {
+        $('.customWindow .tabular.menu .item').tab();
+        // 主表
+        var Config1 = [{
+            caption: "客户简称",
+            name: "客户简称",
+            choice: ["33", "222"],
+            col: 1,
+            datatype: "dtString",
+            editor: "ComboBox",
+            fieldname: "CustomerName",
+            row: 1,
+            text: "客户简称",
+            visible: "True"
+        }, {
+            caption: "EXW是否计算退税",
+            name: "EXW是否计算退税",
+            col: 1,
+            datatype: "dtBoolean",
+            editor: "CheckBox",
+            fieldname: "IsEXW",
+            row: 1,
+            text: "EXW是否计算退税",
+            visible: "True"
+        }, {
+            caption: "客户编号",
+            name: "客户编号",
+            col: 1,
+            required: "required",
+            datatype: "0",
+            editor: "TextEdit",
+            fieldname: "CustomerShortName",
+            row: 1,
+            text: "客户编号",
+            visible: "True"
+        }];
+        $("#area1").initfuncedit({
+            col: 1,
+            edAttr: Config1,
+            onchange: function () {
+
+            },
+            oninit: function () {
+                $("#area1").editbyname("客户编号").setValue("222");
+                var val = $("#area1").editbyfieldname("CustomerShortName").getValue();
+                console.log('val: ', val);
+                $("#area1").editbyname("客户简称").setValue(val);
+            }
+        });
+        //重置编辑尺寸
+        //$("#area1").edResize();
+        // 子表
+        $('#open').click(function () {
+			alert('打开');
+		});
+        $('#new').click(function () {
+			alert('新建');
+		});
+        $("#table1").initJqGrid({
+            colModel: [{
+                index: "A",
+                name: "A",
+                sortable: false,
+                sorttype: "string",
+                width: 100,
+                hidden: false,
+            }, {
+                index: "B",
+                name: "B",
+                sortable: false,
+                sorttype: "string",
+                width: 100,
+                hidden: false,
+            }], //列属性
+            colNames: ["Ass", "Bsss"], //列标签
+            footerrow: false, //是否显示页脚
+            multiselect: true, //是否可多选
+            ondblClickCell: function (idx, fieldname, value, dom) {
+                console.log('双击单元格: ');
+                console.log('value: ', value);
+                console.log('fieldname: ', fieldname);
+                console.log('idx: ', idx);
+
+            }, //双击单元格
+            onClickCell: function (idx, fieldname, value, dom) {
+                console.log('选中单元格: ');
+                console.log('value: ', value);
+                console.log('fieldname: ', fieldname);
+                console.log('idx: ', idx);
+            }, //单及、选中单元格
+            gridComplete: function () {
+                console.log('表格框架完成准备填数据：');
+                var gridData = [{
+                    "A": 1,
+                    "B": 1
+                }, {
+                    "A": 2,
+                    "B": 2
+                }, {
+                    "A": 3,
+                    "B": 3
+                }]
+                $("#table1").JqGrid("initData", gridData);
+            }, //表格框架完成准备填数据
+            onSelectRow: function (res) {
+                console.log('选中记录：');
+                console.log(res);
+            }
+        });
+        $("#table1").JqGrid("setSelection", 2)
+    })
+</script>

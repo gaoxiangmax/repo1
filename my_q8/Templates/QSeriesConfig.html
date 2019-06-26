@@ -1,0 +1,747 @@
+<%
+    from iCloud.core.utils import language_get,caption_get
+%>
+<div class="header">${language_get(u'Q系配置')}</div>
+<!-- 关闭按钮 -->
+<i class="close icon"></i>
+<!-- 界面主体 默认为height:500px -->
+<div class="customWindow" id="customWindow${id}">
+    <!-- 默认为height:480px -->
+    <div class="content">
+        <!-- tab条 默认height:30px-->
+        <div class="ui top attached tabular menu">
+            <a class="item active" data-tab="first${id}" id="wholeSituation">${language_get(u'全局配置')}</a>
+            <a class="item" data-tab="second${id}">${language_get(u'私有配置')}</a>
+        </div>
+        <!-- tab对应的主体div 默认height:450px-->
+        <div class="ui bottom attached tab segment active" data-tab="first${id}">
+            <!-- 标签 默认height:30px-->
+            <div class="label">
+                <i class="map marker alternate icon"></i>${language_get(u'系统设置')}</div>
+            <!-- 编辑模块 -->
+            <div class="area" id="SystemConfig">
+            </div>
+            <div class="divider"></div>
+            <!-- 标签 默认height:30px-->
+            <div class="label">
+                <i class="map marker alternate icon"></i>${language_get(u'客户公海')}</div>
+            <!-- 编辑模块 -->
+            <div class="area" id="PublicCustomers">
+            </div>
+            <div class="divider"></div>
+
+            <!-- 标签 默认height:30px-->
+            <div class="label">
+                <i class="map marker alternate icon"></i>${language_get(u'客户报价')}</div>
+            <!-- 编辑模块 -->
+            <div class="area" id="Quotations">
+            </div>
+            <div class="divider"></div>
+
+            <!-- 标签 默认height:30px-->
+            <div class="label">
+                <i class="map marker alternate icon"></i>${language_get(u'销售合同')}</div>
+            <!-- 编辑模块 -->
+            <div class="area" id="SalesOrders">
+            </div>
+            <div class="divider"></div>
+
+            <!-- 标签 默认height:30px-->
+            <div class="label">
+                <i class="map marker alternate icon"></i>${language_get(u'采购计划')}</div>
+            <!-- 编辑模块 -->
+            <div class="area" id="PurchasePlans">
+            </div>
+            <div class="divider"></div>
+
+            <!-- 标签 默认height:30px-->
+            <div class="label">
+                <i class="map marker alternate icon"></i>${language_get(u'采购合同')}</div>
+            <!-- 编辑模块 -->
+            <div class="area" id="PurchaseOrders">
+            </div>
+            <div class="divider"></div>
+
+            <!-- 标签 默认height:30px-->
+            <div class="label">
+                <i class="map marker alternate icon"></i>${language_get(u'出运计划')}</div>
+            <!-- 编辑模块 -->
+            <div class="area" id="ShipingPlans">
+            </div>
+            <div class="divider"></div>
+
+            <!-- 标签 默认height:30px-->
+            <div class="label">
+                <i class="map marker alternate icon"></i>${language_get(u'出运明细')}</div>
+            <!-- 编辑模块 -->
+            <div class="area" id="Shipments">
+            </div>
+            <div class="divider"></div>
+
+            <!-- 标签 默认height:30px-->
+            <div class="label">
+                <i class="map marker alternate icon"></i>${language_get(u'客户收汇')}</div>
+            <!-- 编辑模块 -->
+            <div class="area" id="Incomes">
+            </div>
+            <div class="divider"></div>
+
+            <!-- 标签 默认height:30px-->
+            <div class="label">
+                <i class="map marker alternate icon"></i>${language_get(u'汇率管理')}</div>
+            <!-- 编辑模块 -->
+            <div class="area" id="ExchangeRate">
+            </div>
+            <div class="divider"></div>
+        </div>
+
+        <div class="ui bottom attached tab segment" data-tab="second${id}">
+            <!-- 标签 默认height:30px-->
+            <div class="label">
+                <i class="map marker alternate icon"></i>${language_get(u'建设中......')}</div>
+            <!-- 编辑模块 -->
+            <div class="area" id="SystemConfig">
+            </div>
+            <div class="divider"></div>
+        </div>
+    </div>
+</div>
+<div class="actions">
+    <!-- 取消按钮 -->
+    <div class="ui black deny button cancel">
+        ${language_get('cancel')}
+    </div>
+    <!-- 确认按钮 -->
+    <div class="ui positive right labeled icon button keep" id="btnOK">
+        ${language_get('confirm')}
+    </div>
+</div>
+
+<script type="text/javascript">
+    require(['cxcore', 'cxsemanticui', 'cxEdit', 'iJqGrid'], function (cxcore, cxsemanticui) {
+        $('#customWindow${id} .tabular.menu .item').unbind().tab({
+            // 重置第二个标签之后所有标签内area的宽度
+            onVisible: function (data_tab) {
+                if (data_tab == "second${id}") {
+                    // $("#SystemConfig").edResize();
+                }
+            }
+        });
+        var aConfig; //配置属性
+        var bindchange = false; //初始化标志，即界面未渲染完成前，change无效。
+        var bCaptionLock = true;//captionLock为true则当字段太长时强制将字段宽度置为160px
+        if (window.intersky.sLanguage != "English"){
+            bCaptionLock = false;
+        }
+        //type=0:打开主页;type=1:查询货币代码;
+        var fnEditor = function (callback) {
+            //系统设置
+            var sCaption1 = _.language.get('启用多级菜单(须重启Cloud服务)');
+            var aCfgSystem = [{
+                name: "启用多级菜单", //数据库字段名
+                fieldname: "SystemConfig_MultistageMenu", //字段名
+                fullname: "Public_SystemConfig_MultistageMenu", //全字段名,用于判断主子表的字段唯一性
+                datatype: "dtBoolean", //字段类型
+                visible: "True", //是否可见
+                col: 1, //列
+                row: 1, //行
+                editor: "CheckBox", //字段属性              
+                text: sCaption1 //标签以及hint         
+            }];
+            $("#SystemConfig").initfuncedit({
+                captionLock: bCaptionLock,
+                col: 1, //当前字段组总列数
+                edAttr: aCfgSystem,
+                onchange: function (oField) {
+                    if (bindchange) {
+                        var fieldname = $(oField).attr("fieldname"); //获取cahnge字段名
+                        var value = $(oField).getValue(); //获取change字段的值
+                        if ($(oField).attr("datatype") == "dtBoolean") {
+                            value = _.convert.toBoolean(value);
+                        }
+                        aConfig[fieldname] = value; //将changge值改写aConfig对象
+                    }
+                },
+                oninit: function () {
+                    $("#SystemConfig").editbyname("启用多级菜单").setValue(aConfig.SystemConfig_MultistageMenu);
+                }
+            });
+            var sCaption2 = _.language.get('启用公海客户机制');
+            //客户公海，定义字段属性
+            var aCfgPublicCustomers = [{
+                name: "启用公海客户机制", //数据库字段名
+                fieldname: "PublicCustomers_PublicCheck", //字段名
+                fullname: "Public_PublicCustomers_PublicCheck", //全字段名,用于判断主子表的字段唯一性
+                datatype: "dtBoolean", //字段类型
+                visible: "True", //是否可见
+                col: 1, //列
+                row: 1, //行
+                editor: "CheckBox", //字段属性              
+                text: sCaption2 //hint         
+            }];
+            $("#PublicCustomers").initfuncedit({
+                captionLock: bCaptionLock,
+                col: 1, //当前字段组总列数
+                edAttr: aCfgPublicCustomers,
+                onchange: function (oField) {
+                    if (bindchange) {
+                        var fieldname = $(oField).attr("fieldname"); //获取cahnge字段名
+                        var value = $(oField).getValue(); //获取change字段的值
+                        if ($(oField).attr("datatype") == "dtBoolean") {
+                            value = _.convert.toBoolean(value);
+                        }
+                        aConfig[fieldname] = value; //将changge值改写aConfig对象
+                    }
+                },
+                oninit: function () {
+                    $("#PublicCustomers").editbyname("启用公海客户机制").setValue(aConfig.PublicCustomers_PublicCheck);
+                }
+            });
+            var sCaption3 = _.language.get('启动审批前允许打印报表');
+            //客户报价
+            var aCfgQuotations = [{
+                name: "启动审批前允许打印报表",
+                fieldname: "Quotations_PrintBeforeStartupCheck",
+                fullname: "Public_Quotations_PrintBeforeStartupCheck",
+                datatype: "dtBoolean",
+                visible: "True",
+                col: 1,
+                row: 1,
+                editor: "CheckBox",
+                text: sCaption3
+            }];
+            $("#Quotations").initfuncedit({
+                captionLock: bCaptionLock,
+                col: 1,
+                edAttr: aCfgQuotations,
+                onchange: function (oField) {
+                    if (bindchange) {
+                        var fieldname = $(oField).attr("fieldname"); //获取cahnge字段名
+                        var value = $(oField).getValue(); //获取change字段的值
+                        if ($(oField).attr("datatype") == "dtBoolean") {
+                            value = _.convert.toBoolean(value);
+                        }
+                        aConfig[fieldname] = value; //将changge值改写aConfig对象
+                    }
+                },
+                oninit: function () {
+                    //初始化时dosomething
+                    $("#Quotations").editbyname("启动审批前允许打印报表").setValue(aConfig.Quotations_PrintBeforeStartupCheck);
+                }
+            });
+            var sCaption4 = _.language.get('审批通过才能生成采购计划');
+            var sCaption5 = _.language.get('收到定金才能生成采购计划');
+            var sCaption6 = _.language.get('生成采购计划的记录所有者与销售合同一致');
+            var sCaption7 = _.language.get('生成采购计划时，采购计划单号的编码规则不随销售合同');
+            //销售合同
+            var aCfgSalesOrders = [{
+                name: "启动审批前允许打印报表",
+                fieldname: "SalesOrders_PrintBeforeStartupCheck",
+                fullname: "Public_SalesOrders_PrintBeforeStartupCheck",
+                datatype: "dtBoolean",
+                visible: "True",
+                col: 1,
+                row: 1,
+                editor: "CheckBox",
+                text: sCaption3
+            }, {
+                name: "审批通过才能生成采购计划",
+                fieldname: "SalesOrder_ToPurWorkFlowCheck",
+                fullname: "Public_SalesOrder_ToPurWorkFlowCheck",
+                datatype: "dtBoolean",
+                visible: "True",
+                col: 1,
+                row: 1,
+                editor: "CheckBox",
+                text: sCaption4
+            }, {
+                name: "收到定金才能生成采购计划",
+                fieldname: "SalesOrder_ToDownPaymentCheck",
+                fullname: "Public_SalesOrder_ToDownPaymentCheck",
+                datatype: "dtBoolean",
+                visible: "True",
+                col: 1,
+                row: 1,
+                editor: "CheckBox",
+                text: sCaption5
+            }, {
+                name: "生成采购计划的记录所有者与销售合同一致",
+                fieldname: "SalesOrder_UpdatePurchasePlansUserCheck",
+                fullname: "Public_SalesOrder_UpdatePurchasePlansUserCheck",
+                datatype: "dtBoolean",
+                visible: "True",
+                col: 1,
+                row: 1,
+                editor: "CheckBox",
+                text: sCaption6
+
+            }, {
+                name: "采购计划自动编号",
+                fieldname: "SalesOrders_AutoNoCheck",
+                fullname: "Public_SalesOrders_AutoNoCheck",
+                datatype: "dtBoolean",
+                visible: "True",
+                col: 1,
+                row: 1,
+                editor: "CheckBox",
+                text: sCaption7
+            }];
+            $("#SalesOrders").initfuncedit({
+                captionLock: bCaptionLock,
+                col: 1,
+                edAttr: aCfgSalesOrders,
+                onchange: function (oField) {
+                    //change时dosomething
+                    if (bindchange) {
+                        var fieldname = $(oField).attr("fieldname"); //获取cahnge字段名
+                        var value = $(oField).getValue(); //获取change字段的值
+                        if ($(oField).attr("datatype") == "dtBoolean") {
+                            value = _.convert.toBoolean(value);
+                        }
+                        aConfig[fieldname] = value; //将changge值改写aConfig对象
+                    }
+                },
+                oninit: function () {
+                    //初始化时dosomething
+                    $("#SalesOrders").editbyname("启动审批前允许打印报表").setValue(aConfig.SalesOrders_PrintBeforeStartupCheck);
+                    $("#SalesOrders").editbyname("审批通过才能生成采购计划").setValue(aConfig.SalesOrder_ToPurWorkFlowCheck);
+                    $("#SalesOrders").editbyname("收到定金才能生成采购计划").setValue(aConfig.SalesOrder_ToDownPaymentCheck);
+                    $("#SalesOrders").editbyname("生成采购计划的记录所有者与销售合同一致").setValue(aConfig.SalesOrder_UpdatePurchasePlansUserCheck);
+                    $("#SalesOrders").editbyname("采购计划自动编号").setValue(aConfig.SalesOrders_AutoNoCheck);
+                }
+            });
+
+            //采购计划
+            var sCaption8 = _.language.get('生成采购合同时，采购合同单号的编码规则不随采购计划');
+            var aCfgPurchasePlans = [{
+                name: "采购合同自动编号",
+                fieldname: "PurchasePlans_AutoNoCheck",
+                fullname: "Public_PurchasePlans_AutoNoCheck",
+                datatype: "dtBoolean",
+                visible: "True",
+                col: 1,
+                row: 1,
+                editor: "CheckBox",
+                text: sCaption8
+            }];
+            $("#PurchasePlans").initfuncedit({
+                captionLock: bCaptionLock,
+                col: 1,
+                edAttr: aCfgPurchasePlans,
+                onchange: function (oField) {
+                    //change时dosomething
+                    if (bindchange) {
+                        var fieldname = $(oField).attr("fieldname"); //获取cahnge字段名
+                        var value = $(oField).getValue(); //获取change字段的值
+                        if ($(oField).attr("datatype") == "dtBoolean") {
+                            value = _.convert.toBoolean(value);
+                        }
+                        aConfig[fieldname] = value; //将changge值改写aConfig对象
+                    }
+                },
+                oninit: function () {
+                    //初始化时dosomething
+                    $("#PurchasePlans").editbyname("采购合同自动编号").setValue(aConfig.PurchasePlans_AutoNoCheck);
+                }
+            });
+
+            //采购合同
+            var sCaption9 = _.language.get('免批进行定金支付申请');
+            var aCfgPurchaseOrders = [{
+                name: "启动审批前允许打印报表",
+                fieldname: "PurchaseOrders_PrintBeforeStartupCheck",
+                fullname: "Public_PurchaseOrders_PrintBeforeStartupCheck",
+                datatype: "dtBoolean",
+                visible: "True",
+                col: 1,
+                row: 1,
+                editor: "CheckBox",
+                text: sCaption3
+            }, {
+                name: "免批进行定金支付申请",
+                fieldname: "PurchaseOrders_NoNeedForApprovalDepositCheck",
+                fullname: "Public_PurchaseOrders_NoNeedForApprovalDepositCheck",
+                datatype: "dtBoolean",
+                visible: "True",
+                col: 1,
+                row: 1,
+                editor: "CheckBox",
+                text: sCaption9
+            }];
+            $("#PurchaseOrders").initfuncedit({
+                captionLock: bCaptionLock,
+                col: 1,
+                edAttr: aCfgPurchaseOrders,
+                onchange: function (oField) {
+                    //change时dosomething
+                    if (bindchange) {
+                        var fieldname = $(oField).attr("fieldname"); //获取cahnge字段名
+                        var value = $(oField).getValue(); //获取change字段的值
+                        if ($(oField).attr("datatype") == "dtBoolean") {
+                            value = _.convert.toBoolean(value);
+                        }
+                        aConfig[fieldname] = value; //将changge值改写aConfig对象
+                    }
+                },
+                oninit: function () {
+                    //初始化时dosomething
+                    $("#PurchaseOrders").editbyname("启动审批前允许打印报表").setValue(aConfig.PurchaseOrders_PrintBeforeStartupCheck);
+                    $("#PurchaseOrders").editbyname("免批进行定金支付申请").setValue(aConfig.PurchaseOrders_NoNeedForApprovalDepositCheck);
+                }
+            });
+
+            //出运计划
+            var sCaption10 = _.language.get('报关方式');
+            var sCaption11 = _.language.get('允许"参考合同"调入未审批的销售合同');
+            var aCfgShipingPlans = [{
+                name: "报关方式",
+                fieldname: "ShipingPlans_DeclareType",
+                fullname: "Public_ShipingPlans_DeclareType",
+                datatype: "dtString",
+                visible: "True",
+                col: 2,
+                row: 1,
+                editor: "ComboBox",
+                choice: ["组成报关", "配件报关"],
+                text: sCaption10
+            }, {
+                name: "参考合同",
+                fieldname: "ShipingPlans_AllowSalesWorkflow",
+                fullname: "Public_ShipingPlans_AllowSalesWorkflow",
+                datatype: "dtBoolean",
+                visible: "True",
+                col: 3,
+                row: 1,
+                editor: "CheckBox",
+                text: sCaption11
+            }];
+            //captionLock=true，则宽度最大160
+            $("#ShipingPlans").initfuncedit({
+                captionLock: bCaptionLock,
+                col: 3,
+                edAttr: aCfgShipingPlans,
+                onchange: function (oField) {
+                    //change时dosomething
+                    if (bindchange) {
+                        var fieldname = $(oField).attr("fieldname"); //获取cahnge字段名
+                        var value = $(oField).getValue(); //获取change字段的值
+                        if ($(oField).attr("datatype") == "dtBoolean") {
+                            value = _.convert.toBoolean(value);
+                        }
+                        aConfig[fieldname] = value; //将changge值改写aConfig对象
+                    }
+                },
+                oninit: function () {
+                    //初始化时dosomething
+                    $("#ShipingPlans").editbyname("报关方式").setValue(aConfig.ShipingPlans_DeclareType);
+                    $("#ShipingPlans").editbyname("参考合同").setValue(aConfig.ShipingPlans_AllowSalesWorkflow);
+                }
+            });
+
+            //出运明细
+            var sCaption13 = _.language.get('溢短比率(%)');
+            var sCaption14 = _.language.get('海运费币种');
+            var sCaption15 = _.language.get('[采购明细]报关价根据"对应产品"从[产品资料]调入');
+            _.net.get('/intersky/qConfig?type=1', {}, function (obj) {
+                var aCurrency = [];
+                var oSQL = obj.data;
+                for (var i in oSQL) {
+                    aCurrency.push(oSQL[i].CurrencyCode);
+                }
+                var aCfgShipments = [{
+                    name: "溢短比率",
+                    fieldname: "Shipments_OverflowShortRatio",
+                    fullname: "Public_Shipments_OverflowShortRatio",
+                    datatype: "dtFloat",
+                    visible: "True",
+                    col: 2,
+                    row: 1,
+                    editor: "TextEdit",
+                    text: sCaption13
+                }, {
+                    name: "海运费币种",
+                    fieldname: "Shipments_SeaFreightCurrencyCoBx",
+                    fullname: "Public_Shipments_SeaFreightCurrencyCoBx",
+                    datatype: "dtString",
+                    visible: "True",
+                    col: 2,
+                    row: 1,
+                    editor: "ComboBox",
+                    choice: aCurrency,
+                    text: sCaption14
+                }, {
+                    name: "报关价从产品资料调入",
+                    fieldname: "Shipments_CustomsPriceCheck",
+                    fullname: "Public_Shipments_CustomsPriceCheck",
+                    datatype: "dtBoolean",
+                    visible: "True",
+                    col: 3,
+                    row: 1,
+                    editor: "CheckBox",
+                    text: sCaption15
+                }];
+                $("#Shipments").initfuncedit({
+                    captionLock: bCaptionLock,
+                    col: 3,
+                    captionWidth: 280,
+                    edAttr: aCfgShipments,
+                    onchange: function (oField) {
+                        //change时dosomething
+                        if (bindchange) {
+                            var fieldname = $(oField).attr("fieldname"); //获取change字段名
+                            var value = $(oField).getValue(); //获取change字段的值
+                            if ($(oField).attr("datatype") == "dtBoolean") {
+                                value = _.convert.toBoolean(value);
+                            }
+                            aConfig[fieldname] = value; //将changge值改写aConfig对象
+                        }
+                    },
+                    oninit: function () {
+                        //初始化时dosomething
+                        $("#Shipments").editbyname("溢短比率").setValue(aConfig.Shipments_OverflowShortRatio);
+                        $("#Shipments").editbyname("海运费币种").setValue(aConfig.Shipments_SeaFreightCurrencyCoBx);
+                        $("#Shipments").editbyname("报关价从产品资料调入").setValue(aConfig.Shipments_CustomsPriceCheck);
+                    }
+                });
+            });
+
+            //客户收汇
+            var sCaption16 = _.language.get('按照"使用金额"自动分摊扣款');
+            var aCfgIncomes = [{
+                name: "自动分摊扣款",
+                fieldname: "Incomes_ApportionmentCheck",
+                fullname: "Public_Incomes_ApportionmentCheck",
+                datatype: "dtBoolean",
+                visible: "True",
+                col: 1,
+                row: 1,
+                editor: "CheckBox",
+                text: sCaption16
+            }];
+            $("#Incomes").initfuncedit({
+                captionLock: bCaptionLock,
+                col: 1,
+                edAttr: aCfgIncomes,
+                onchange: function (oField) {
+                    //change时dosomething
+                    if (bindchange) {
+                        var fieldname = $(oField).attr("fieldname"); //获取cahnge字段名
+                        var value = $(oField).getValue(); //获取change字段的值
+                        if ($(oField).attr("datatype") == "dtBoolean") {
+                            value = _.convert.toBoolean(value);
+                        }
+                        aConfig[fieldname] = value; //将changge值改写aConfig对象
+                    }
+                },
+                oninit: function () {
+                    //初始化时dosomething
+                    $("#Incomes").editbyname("自动分摊扣款").setValue(aConfig.Incomes_ApportionmentCheck);
+                }
+            });
+
+            //汇率管理
+            var sCaption16 = _.language.get('启用[汇率管理]');
+            var aCfgExchangeRate = [{
+                name: "启用汇率管理",
+                fieldname: "ExchangeRate_CheckBox",
+                fullname: "Public_ExchangeRate_CheckBox",
+                datatype: "dtBoolean",
+                visible: "True",
+                col: 1,
+                row: 1,
+                editor: "CheckBox",
+                text: sCaption16
+            }];
+            $("#ExchangeRate").initfuncedit({
+                captionLock: bCaptionLock,
+                col: 1,
+                edAttr: aCfgExchangeRate,
+                onchange: function (oField) {
+                    //change时dosomething
+                    if (bindchange) {
+                        var fieldname = $(oField).attr("fieldname"); //获取cahnge字段名
+                        var value = $(oField).getValue(); //获取change字段的值
+                        if ($(oField).attr("datatype") == "dtBoolean") {
+                            value = _.convert.toBoolean(value);
+                        }
+                        aConfig[fieldname] = value; //将changge值改写aConfig对象
+                    }
+                },
+                oninit: function () {
+                    //初始化时dosomething
+                    $("#ExchangeRate").editbyname("启用汇率管理").setValue(aConfig.ExchangeRate_CheckBox);
+                }
+            });
+
+            //私有配置，todo
+            // var aCfgSystemConfig = [{
+            //     name: "启用业务示警",
+            //     caption: "启用业务示警-系统提醒",
+            //     fieldname: "SystemReminder_Check",
+            //     fullname:"Private_SystemReminder_Check",
+            //     datatype: "dtBoolean",
+            //     visible: "True",
+            //     col: 1,
+            //     row: 1,
+            //     editor: "CheckBox",
+            //     text: "启用业务示警-系统提醒"              
+            // }];
+            // $("#SystemConfig").initfuncedit({
+            //     col: 1,
+            //     edAttr: aCfgSystemConfig,
+            //     onchange: function (oField) {
+            //         //change时dosomething
+            //         if (bindchange) {
+            //             var fieldname = $(oField).attr("fieldname"); //获取cahnge字段名
+            //             var value = $(oField).getValue(); //获取change字段的值
+            //             var oFielaName = aConfig[fieldname];
+            //             var iLength = oFielaName.length - 1;
+            //             for (var i in oFielaName) {
+            //                 if (oFielaName[i].sUserID == sUserID) {
+            //                     oFielaName[i].bCheck = value;
+            //                     break;
+            //                 } else {
+            //                     if (iLength - i == 0) {
+            //                         oFielaName.push({
+            //                             sUserID: sUserID,
+            //                             bCheck: true
+            //                         });
+            //                     }
+            //                 }
+            //             }
+            //         }
+            //     },
+            //     oninit: function () {
+            //         //初始化时dosomething
+            //         var oFielaName = aConfig.SystemReminder_Check;
+            //         for (var i in oFielaName) {
+            //             if (oFielaName[i].sUserID == sUserID) {
+            //                 $("#SystemConfig").editbyname("启用业务示警").setValue(oFielaName[i].bCheck);
+            //                 break;
+            //             }
+            //         }
+            //     }
+            // });
+            callback(true);
+        };
+
+        var oUserInfo = _.app.cxUserInfo();
+        var sUserID = oUserInfo.recordID
+        _.net.get('/intersky/qConfig/read', {}, function (obj) {
+            //若非管理员打开，则全局配置只读
+            if (!oUserInfo.isAdmin) {
+                var aArea = ['SystemConfig', 'PublicCustomers', 'Quotations', 'SalesOrders',
+                    'PurchasePlans',
+                    'PurchaseOrders', 'ShipingPlans', 'Shipments', 'Incomes', 'ExchangeRate'
+                ];
+                aArea.forEach(function (element) {
+                    var oArea = $("#" + element);
+                    var oedload = oArea.edload();
+                    var oAttr = oedload.edAttr
+                    for (var i in oAttr) {
+                        oAttr[i].enabled = "False";
+                        oArea.changeEdstore(oedload)
+                    }
+                });
+            }
+            var arr = Object.keys(obj.data);
+            if (arr.length!=0) {
+                aConfig = obj.data;
+                var aItem = ['SystemConfig_MultistageMenu', 'PublicCustomers_PublicCheck',
+                    'SalesOrder_UpdatePurchasePlansUserCheck', 'ExchangeRate_CheckBox',
+                    'ShipingPlans_AllowSalesWorkflow'
+                ]
+                aItem.forEach(function (element) {
+                    if (!(element in aConfig)) {
+                        aConfig[element] = true
+                    }
+                });
+
+                var aItem = ['Quotations_PrintBeforeStartupCheck',
+                    'SalesOrders_PrintBeforeStartupCheck', 'SalesOrder_ToPurWorkFlowCheck',
+                    'SalesOrder_ToDownPaymentCheck',
+                    'SalesOrders_AutoNoCheck', 'PurchasePlans_AutoNoCheck',
+                    'PurchaseOrders_PrintBeforeStartupCheck',
+                    'PurchaseOrders_NoNeedForApprovalDepositCheck',
+                    'Shipments_CustomsPriceCheck', 'Incomes_ApportionmentCheck'
+                ]
+                aItem.forEach(function (element) {
+                    if (!(element in aConfig)) {
+                        aConfig[element] = false
+                    }
+                });
+
+                if (!("ShipingPlans_DeclareType" in aConfig)) {
+                    aConfig["ShipingPlans_DeclareType"] = "配件报关";
+                }
+                if (!("Shipments_OverflowShortRatio" in aConfig)) {
+                    aConfig["Shipments_OverflowShortRatio"] = 5;
+                }
+                if (!("Shipments_SeaFreightCurrencyCoBx" in aConfig)) {
+                    aConfig["Shipments_SeaFreightCurrencyCoBx"] = 'USD';
+                }
+            } else {
+                //默认配置属性
+                aConfig = {
+                    SystemConfig_MultistageMenu: true,
+                    PublicCustomers_PublicCheck: true,
+                    Quotations_PrintBeforeStartupCheck: false,
+                    SalesOrders_PrintBeforeStartupCheck: false,
+                    SalesOrder_ToPurWorkFlowCheck: false,
+                    SalesOrder_ToDownPaymentCheck: false,
+                    SalesOrder_UpdatePurchasePlansUserCheck: true,
+                    SalesOrders_AutoNoCheck: false,
+                    PurchasePlans_AutoNoCheck: false,
+                    PurchaseOrders_PrintBeforeStartupCheck: false,
+                    PurchaseOrders_NoNeedForApprovalDepositCheck: false,
+                    ShipingPlans_DeclareType: "配件报关",
+                    ShipingPlans_AllowSalesWorkflow: true,
+                    Shipments_OverflowShortRatio: 5,
+                    Shipments_SeaFreightCurrencyCoBx: 'USD',
+                    Shipments_CustomsPriceCheck: false,
+                    Incomes_ApportionmentCheck: false,
+                    ExchangeRate_CheckBox: true,
+                    SystemReminder_Check: [{
+                        sUserID: sUserID,
+                        bCheck: true
+                    }]
+                }
+            }
+            if (aConfig) {
+                fnEditor(function (res) {
+                    if (res == true) {
+                        bindchange = true;
+                    }
+                });
+            } else {
+                _.ui.showError(_.language.get('操作失败！'));
+            }
+        });
+
+        //存储配置文件
+        $("#btnOK").click(function () {
+            //将配置文件传给python进行文件存储
+            _.net.postJson('/intersky/qConfig/write', JSON.stringify({
+                qconfig: aConfig
+            }), function (obj) {
+                if (obj.msg == "Success:write_file!") {
+                    window.aconfig = aConfig; //将修改的配置信息传给全局变量，立即生效配置。
+                    //一些配置信息需要在数据填充、决策分析等SQL使用，则须要存储到内存表中才能别调用。
+                    _.db.execute('QSeriesConfig_Call_Proc_SystemEnable_Public', {
+                        "values": {
+                            "bPurchaseOrders_NoNeedForApprovalDepositCheck": aConfig.PurchaseOrders_NoNeedForApprovalDepositCheck,
+                            "bSystemConfig_MultistageMenu": aConfig.SystemConfig_MultistageMenu,
+                            "bShipingPlans_AllowSalesWorkflow": aConfig.ShipingPlans_AllowSalesWorkflow
+                        }
+                    });
+                    _.ui.showInfo(_.language.get('配置保存成功,请重新登陆系统！'));
+                } else {
+                    _.ui.showError(_.language.get('操作失败！'));
+                }
+            });
+        });
+
+        //重置编辑尺寸
+        //$("#area1").edResize();
+    })
+</script>

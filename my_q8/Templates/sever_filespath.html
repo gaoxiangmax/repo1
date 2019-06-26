@@ -1,0 +1,127 @@
+<%
+    from iCloud.core.utils import language_get,caption_get
+%>
+    <div class="header">${language_get(u'开发目录')}</div>
+    <!-- 关闭按钮 -->
+    <i class="close icon"></i>
+    <!-- 界面主体 默认为height:500px -->
+    <div class="customWindow">
+        <!-- 默认为height:480px -->
+        <div class="content">
+            <!-- tab条 默认height:30px-->
+            <div class="ui top attached tabular menu">
+                <a class="item active" data-tab="0" id="wholeSituation">SQL</a>
+                <a class="item" data-tab="1">Function</a>
+                <a class="item" data-tab="2">Trigger</a>
+                <a class="item" data-tab="3">View</a>
+                <a class="item" data-tab="4">Scripts</a>
+                <a class="item" data-tab="5">ServerScripts</a>
+                <a class="item" data-tab="6">Templates</a>
+
+            </div>
+            <!-- tab对应的主体div 默认height:450px-->
+            <div class="ui bottom attached tab segment active" data-tab="0">
+                <div class="area" id="aSQL">
+                </div>
+            </div>
+
+            <div class="ui bottom attached tab segment" data-tab="1">
+                <div class="area" id="aFunction">
+                </div>
+            </div>
+
+            <div class="ui bottom attached tab segment" data-tab="2">
+                <div class="area" id="aTrigger">
+                </div>
+            </div>
+
+            <div class="ui bottom attached tab segment" data-tab="3">
+                <div class="area" id="aView">
+                </div>
+            </div>
+
+            <div class="ui bottom attached tab segment" data-tab="4">
+                <div class="area" id="aScripts">
+                </div>
+            </div>
+
+            <div class="ui bottom attached tab segment" data-tab="5">
+                <div class="area" id="aServerScripts">
+                </div>
+            </div>
+
+            <div class="ui bottom attached tab segment" data-tab="6">
+                <div class="area" id="aTemplates">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        require(['cxcore', 'cxsemanticui', 'cxEdit', 'iJqGrid'], function (cxcore, cxsemanticui) {
+            $('.customWindow .tabular.menu .item').tab();
+            //执行遍历文件路径并加载至界面
+            var fnInit = function (iTab, resdiv) {
+                //路由后加dir参数传给python-sever_filespath.py用于遍历文件，即用户点击菜单的名称。type为自定义参数，0：打开服务目录主页；1：查找目录；2：删除文件
+                _.net.get('/intersky/sever_filespath?type=1&dir=' + iTab, {}, function (obj) {
+                    var oData = obj.data;
+                    resdiv.html(''); //清空文件列表
+                    if (oData.length > 0) {
+                        //加载文件列表
+                        resdiv.append('</br>');
+                        for (var i in oData) {
+                            resdiv.append(
+                                '<div class="item" style="position: relative;padding-left: 100px;height: auto;font-size: 12px;word-wrap: break-word;line-height: 30px;min-height: 30px;margin-bottom: 4px;">'+
+                                '<button style="position: absolute;left: 18px;top: 0;" class="mini ui button deleteFilesButton" sFileName=' +oData[i] +
+                                '>Delete</button>[' +oData[i] + ']</br></div>');
+                        }
+                        //绑定删除事件
+                        $(".deleteFilesButton").bind("click", function () {
+                            var oRecord = $(this);
+                            //将被点击删除的文件名传给python-sever_filespath.py处理
+                            _.net.get('/intersky/sever_filespath?type=2&sFileName=' +
+                                $(this).attr("sFileName"), {},
+                                function (obj) {
+                                    if (obj.msg == 'Success') {
+                                        //返回文件删除成功后，将页面文件列表删除
+                                        oRecord.parents(".item").remove();
+                                    } else {
+                                        _.ui.showError(_.language.get('操作失败！'));
+                                    }
+                                });
+                        })
+                    }
+                });
+            };
+            //界面初始化预加载SQL
+            fnInit("0", $('#aSQL'));
+            //点击tab加载
+            $('a.item').click(function () {
+                var text = $(this).attr('data-tab'); //用户点击的菜单名对应序号
+                var resdiv;
+                switch (text) {
+                    case "1":
+                        resdiv = $('#aFunction'); //用于存放遍历到的文件名
+                        break;
+                    case "2":
+                        resdiv = $('#aTrigger');
+                        break;
+                    case "3":
+                        resdiv = $('#aView');
+                        break;
+                    case "4":
+                        resdiv = $('#aScripts');
+                        break;
+                    case "5":
+                        resdiv = $('#aServerScripts');
+                        break;
+                    case "6":
+                        resdiv = $('#aTemplates');
+                        break;
+                    default:
+                        resdiv = $('#aSQL');
+                }
+                fnInit(text, resdiv);
+            });
+        });
+    </script>
